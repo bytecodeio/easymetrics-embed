@@ -1,7 +1,7 @@
 
 import React, { Fragment, useState, useRef, useEffect } from 'react';
 import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
-import "../../../DragDrop.css";
+import "../../DragDrop.css";
 
 import { Accordion, AccordionButton, AccordionCollapse, AccordionContext, Alert, Anchor, Badge, Breadcrumb, BreadcrumbItem, Button, ButtonGroup, ButtonToolbar, Card, CardGroup, CardImg, Carousel, CarouselItem, CloseButton, Col, Collapse, Container, Dropdown, DropdownButton, Fade, Figure, FloatingLabel, Form, FormCheck, FormControl, FormFloating, FormGroup, FormLabel, FormSelect, FormText, Image, InputGroup, ListGroup, ListGroupItem, Modal, ModalBody, ModalDialog, ModalFooter, ModalHeader, ModalTitle, Nav, NavDropdown, NavItem, NavLink, Navbar, NavbarBrand, Offcanvas, OffcanvasBody, OffcanvasHeader, OffcanvasTitle, Overlay, OverlayTrigger, PageItem, Pagination, Placeholder, PlaceholderButton, Popover, PopoverBody, PopoverHeader, ProgressBar, Ratio, Row, SSRProvider, Spinner, SplitButton, Stack, Tab, TabContainer, TabContent, TabPane, Table, Tabs, ThemeProvider, Toast, ToastBody, ToastContainer, ToastHeader, ToggleButton, ToggleButtonGroup, Tooltip} from 'react-bootstrap';
 
@@ -10,8 +10,10 @@ import "aos/dist/aos.css";
 
 
 import Vis from "../EmbedDashboard/VizComponent.js";
-
+import EmbedDashboard from "../EmbedDashboard/EmbedDashboard";
 import EmbedDashboard2 from "../EmbedDashboard/EmbedDashboard2";
+import EmbedDashboard3 from "../EmbedDashboard/EmbedDashboard3";
+import EmbedDashboard4 from "../EmbedDashboard/EmbedDashboard4";
 function TopSection() {
 
   useEffect(() => {
@@ -42,9 +44,9 @@ function TopSection() {
 
   const tasks = [
     { id: "1", content:  <EmbedDashboard2/>},
-    { id: "2", content: <EmbedDashboard2/>},
-    { id: "3", content:  <EmbedDashboard2/>},
-    { id: "4", content: <EmbedDashboard2/>},
+    { id: "2", content: <EmbedDashboard/>},
+    { id: "3", content:  <EmbedDashboard3/>},
+    { id: "4", content: <EmbedDashboard4/>},
 
   ];
 

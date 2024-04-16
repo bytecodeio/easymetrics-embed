@@ -27,16 +27,9 @@ const [loading, setLoading] = React.useState(true);
 
 
   const makeDashboard = useCallback((el) => {
+    // el.innerHTML = "";
 
-
-
-
-    el.innerHTML = "";
-
-
-  LookerEmbedSDK.createDashboardWithId(803)
-    // LookerEmbedSDK.createDashboardWithUrl('https://bytecodeef.looker.com/embed/dashboards/751?theme=Embed1')
-
+    LookerEmbedSDK.createLookWithId(243)
 
     .withParams({
       _theme:'{"show_filters_bar":false}'

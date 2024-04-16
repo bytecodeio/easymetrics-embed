@@ -8,23 +8,16 @@ const EmbedDashboard = ({ setDashboard, setFilters }) => {
   const [loading, setLoading] = React.useState(true);
 
   const makeDashboard = useCallback((el) => {
-    el.innerHTML = "";
 
-    LookerEmbedSDK.createDashboardWithId('789')
-      // LookerEmbedSDK.createDashboardWithUrl('https://bytecodeef.looker.com/embed/dashboards/751?theme=Embed1')
+        // el.innerHTML = "";
 
-      .withParams({
-        _theme:'{"show_filters_bar":false}'
-      })
+      LookerEmbedSDK.createLookWithId(242)
       .appendTo(el)
 
       .on("dashboard:loaded", (e) => {
         console.log(
           "LookerEmbedSDK.createDashboardWithId()::Successfully Loaded!"
         );
-
-
-        setFilters(e.dashboard.dashboard_filters);
 
         console.log("🚀 ~ file: EmbedDashboard.js:26 ~ .on ~ e:", e);
 

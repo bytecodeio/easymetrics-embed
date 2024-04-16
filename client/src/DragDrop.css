@@ -1,13 +1,13 @@
 
 
 .tiles{
-  background: #dffdfb;
+  background: #d1edf4;
   padding:1em;
   border-radius: 2rem;
   min-height:80em;
   box-shadow: 0px 10px 39px rgb(0 47 108 / 12%);
   height: auto;
-  overflow: auto;
+
 }
 
 .theme-inner-banner {
