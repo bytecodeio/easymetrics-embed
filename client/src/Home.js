@@ -44,7 +44,7 @@ return (
   <>
 <TopNav changeTier={tier} premium={premium} />
 
-<SlideOut/>
+{/*<SlideOut/>*/}
 
 
 <TopSection/>

@@ -1,11 +1,12 @@
 
-import React, { useState, useRef, useEffect } from 'react';
-
+import React, { Fragment, useState, useRef, useEffect } from 'react';
+import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
+import "../../../DragDrop.css";
 
 import { Accordion, AccordionButton, AccordionCollapse, AccordionContext, Alert, Anchor, Badge, Breadcrumb, BreadcrumbItem, Button, ButtonGroup, ButtonToolbar, Card, CardGroup, CardImg, Carousel, CarouselItem, CloseButton, Col, Collapse, Container, Dropdown, DropdownButton, Fade, Figure, FloatingLabel, Form, FormCheck, FormControl, FormFloating, FormGroup, FormLabel, FormSelect, FormText, Image, InputGroup, ListGroup, ListGroupItem, Modal, ModalBody, ModalDialog, ModalFooter, ModalHeader, ModalTitle, Nav, NavDropdown, NavItem, NavLink, Navbar, NavbarBrand, Offcanvas, OffcanvasBody, OffcanvasHeader, OffcanvasTitle, Overlay, OverlayTrigger, PageItem, Pagination, Placeholder, PlaceholderButton, Popover, PopoverBody, PopoverHeader, ProgressBar, Ratio, Row, SSRProvider, Spinner, SplitButton, Stack, Tab, TabContainer, TabContent, TabPane, Table, Tabs, ThemeProvider, Toast, ToastBody, ToastContainer, ToastHeader, ToggleButton, ToggleButtonGroup, Tooltip} from 'react-bootstrap';
 
 import AOS from 'aos';
-import "aos/dist/aos.css"
+import "aos/dist/aos.css";
 
 
 import Vis from "../EmbedDashboard/VizComponent.js";
@@ -39,11 +40,64 @@ function TopSection() {
 
   window.addEventListener('scroll', toggleMenu);
 
+  const tasks = [
+    { id: "1", content:  <EmbedDashboard2/>},
+    { id: "2", content: <EmbedDashboard2/>},
+    { id: "3", content:  <EmbedDashboard2/>},
+    { id: "4", content: <EmbedDashboard2/>},
 
+  ];
+
+  const taskStatus = {
+    first: {
+      name: "Looks",
+      items: tasks,
+
+    },
+
+    requested: {
+      name: "Dashboard",
+      image: "",
+      items: [],
+
+    },
+
+  };
+
+  const [columns, setColumns] = useState(taskStatus);
+
+    const onDragEnd = (result, columns, setColumns) => {
+      if (!result.destination) return;
+      const { source, destination } = result;
+
+      if (source.droppableId !== destination.droppableId) {
+        const sourceColumn = columns[source.droppableId];
+        const destColumn = columns[destination.droppableId];
+        const sourceItems = [...sourceColumn.items];
+        const destItems = [...destColumn.items];
+        const [removed] = sourceItems.splice(source.index, 1);
+        destItems.splice(destination.index, 0, removed);
+
+        setColumns((prev) => ({
+            ...prev,
+            [source.droppableId]: {
+              ...sourceColumn,
+              items: sourceItems,
+            },
+            [destination.droppableId]: {
+              ...destColumn,
+              items: destItems,
+            },
+          }));
+
+      }
+
+
+    };
 
 
 return (
-
+<Fragment>
 
 <Container fluid>
 
@@ -82,26 +136,98 @@ return (
 
 
         <div className="fancy-feature-seventeen position-relative mt-5 mb-5">
-            <Container>
+            <Container fluid>
                 <Row className="service-details position-relative mt-5 mb-150 lg-mb-100">
 
                 <Col sm={12} md={12} lg={12}>
                   <div className="service-details-meta">
-                      <h2>Drag and drop items from right to left</h2>
+                      <h2 className="text-center">Drag and drop looks to create a dashboard</h2>
 
                   </div>
 
                   <Row>
                     <div className="position-relative">
 
+                      <Container fluid className="mb-5 pe-5 ps-5 position-relative">
 
-                      <Col sm={12} md={12} lg={12} className="embed-responsive embed-responsive-16by9 small mb-0">
+                        <Row className="marginTop">
+
+                          <DragDropContext
+                            onDragEnd={(result) => onDragEnd(result, columns, setColumns)}>
+                            {Object.entries(columns).map(([columnId, column], index) => {
+                              return (
+
+                                 <Col xs={12} sm={6} md={6}>
 
 
-                        <EmbedDashboard2
-                        />
+                                <div key={columnId} class="tiles">
+                                <div className="d-flex justify-content-start align-items-center largeMargin">
+                                    <img src={column.image} className="img-responsive cute pe-3"></img>
+                                    <div className="d-flex flex-column"><h4>{column.name}</h4>
 
-                      </Col>
+                                    </div>
+                                    </div>
+
+                                    <div className="bubbles">
+
+                                    <Droppable droppableId={columnId} key={columnId}>
+                                      {(provided, snapshot) => {
+                                        return (
+                                          <div
+                                            {...provided.droppableProps}
+                                            ref={provided.innerRef}
+                                            style={{
+                                            background: snapshot.isDraggingOver
+                                              ? "transparent"
+                                              : "transparent",
+                                            padding: 0,
+                                            width: "100%",
+                                            minHeight: 1800
+                                          }}
+
+                                          >
+                                            {column.items.map((item, index) => {
+                                              return (
+                                                <Draggable
+                                                  key={item.id}
+                                                  draggableId={item.id}
+                                                  index={index}
+                                                  className="drag"
+                                                >
+                                                  {(provided, snapshot) => {
+                                                    return (
+                                                      <div
+                                                        ref={provided.innerRef}
+                                                        {...provided.draggableProps}
+                                                        {...provided.dragHandleProps}
+
+                                                      >
+                                                        {item.content}
+                                                      </div>
+                                                    );
+                                                  }}
+                                                </Draggable>
+                                              );
+                                            })}
+                                            {provided.placeholder}
+                                          </div>
+
+                                        );
+                                      }}
+                                    </Droppable>
+                                    </div>
+                                      </div>
+                                </Col>
+
+
+                              );
+                            })}
+                          </DragDropContext>
+                        </Row>
+                        </Container>
+
+
+
                     </div>
                   </Row>
 
@@ -120,6 +246,8 @@ return (
 </Container>
 
 
+
+</Fragment>
 )
 
 }

@@ -81,6 +81,7 @@ config.authenticatedUser =
     "group_ids": [],
     //user2 has reduced permissions
     "permissions": [
+      
       "access_data",
       "see_looks",
       "see_user_dashboards",

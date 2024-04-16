@@ -28,10 +28,7 @@ const [loading, setLoading] = React.useState(true);
 
   const makeDashboard = useCallback((el) => {
 
-
-
-
-    el.innerHTML = "";
+    // el.innerHTML = "";
 
 
   LookerEmbedSDK.createLookWithId(241)
