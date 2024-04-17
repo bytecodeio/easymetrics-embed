@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged } from "firebase/auth";
 import {  signOut } from "firebase/auth";
-import { auth } from './firebase';
+
 import { NavLink, useNavigate } from 'react-router-dom';
 
 import { BrowserRouter} from 'react-router-dom';
@@ -43,9 +43,6 @@ return (
 
   <>
 <TopNav changeTier={tier} premium={premium} />
-
-{/*<SlideOut/>*/}
-
 
 <TopSection/>
 

@@ -6,9 +6,7 @@ import EmbedSDKInit from "../common/EmbedInit";
 import { Col, Container, Row } from "react-bootstrap";
 
 import EmbedDashboard from "../EmbedDashboard/EmbedDashboard";
-import DashboardFilters from "../EmbedDashboard/DashboardFilters";
-import DashboardFilters2 from "../EmbedDashboard/DashboardFilters2";
-import DashboardFilters3 from "../EmbedDashboard/DashboardFilters3";
+
 import Vis from "../EmbedDashboard/VizComponent.js";
 
 import AOS from "aos";

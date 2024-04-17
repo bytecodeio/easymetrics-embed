@@ -17,9 +17,7 @@ import Home from './Home.js';
 import Services from './Services.js';
 import SelfService from './SelfService.js';
 import Data from './Data.js';
-import Signup from './Signup.js';
-import Login from './Login.js';
-import Logout from './Logout.js';
+
 
 function App() {
   const defaultPremiumValue = localStorage.getItem('premium');
@@ -53,12 +51,7 @@ function App() {
                 <Route path="/services" element={<Services tier={handleTier} premium={premium}/>} />
                 <Route path="/selfservice" element={<SelfService tier={handleTier} premium={premium}/>} />
                 <Route path="/data" element={<Data tier={handleTier} premium={premium}/>} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/logout" element={<Logout />} />
-                <Route path="/signup" element={<Signup/>}/>
 
-              
-                <Route path='*' element={<Navigate to='/signup' />} />
               </Routes>
             </section>
           </div>

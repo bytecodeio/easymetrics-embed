@@ -1,8 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { onAuthStateChanged } from "firebase/auth";
-import { signOut } from "firebase/auth";
-import { auth } from '../../firebase';
+
 
 import { NavLink, useNavigate } from 'react-router-dom';
 import { BrowserRouter } from 'react-router-dom';
@@ -40,36 +38,8 @@ const TopNav = ({ changeTier, props, premium }) => {
 
   window.addEventListener('scroll', toggleMenu);
 
-  useEffect( () => {
-   onAuthStateChanged(auth, (user) => {
-      if (user) {
-
-        const uid = user.uid;
-
-        console.log("uid", uid)
-      } else {
-
-        console.log("user is logged out")
-      }
-    });
-
-
-  }, [])
-
 
   const navigate = useNavigate();
-
-  const handleLogout =  (e) => {
-
-     signOut(auth).then(() => {
-
-      navigate("/logout");
-      console.log("Signed out successfully")
-    }).catch((error) => {
-
-    });
-  }
-
 
   const handleUserStandard = () => {
     changeTier(false)
@@ -137,7 +107,7 @@ const TopNav = ({ changeTier, props, premium }) => {
                <TooltipButton text={premium === 'true' ? 'You are a premium user' : premium === 'false' ? 'Switch to premium user' :  'Switch to premium user' }/>
               </button>
 
-            
+
             </div>
 
           </Navbar.Collapse>

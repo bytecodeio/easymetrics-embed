@@ -6,6 +6,7 @@
 
 body, html{
   font-family: "Fira Sans", sans-serif !important;
+  overflow-x: hidden;
 
 }
 
@@ -38,13 +39,9 @@ body, html{
   height: 50px;
   z-index: 1;
 }
-html{
-  overflow-x: hidden;
-}
 
 .main-page-wrapper {
 
-  overflow-x: hidden;
 
 }
 
@@ -1385,9 +1382,7 @@ color: #17a6c6;
 }
 
 .tiles {
-  max-height: 0%;
-  transition: 0.5s;
-  overflow: hidden;
+
 }
 
 
@@ -5653,8 +5648,8 @@ background: rgba(145, 59, 255, 0.14);
 .hero-banner-five .illustration-holder {
   position: absolute;
   right: 5%;
-  top: 25%;
-  width: 36.4%;
+  top: 26%;
+  width: 43.4%;
 }
 .hero-banner-five .illustration-holder:before {
   content: "";
@@ -7312,8 +7307,8 @@ z-index: 1;
     content: "";
     position: absolute;
     position: absolute;
-    width: 1500px;
-    height: 1500px;
+    width: 1050px;
+    height: 1050px;
     right: -305px;
     top: -505px;
     border-radius: 50%;
@@ -10440,9 +10435,6 @@ iframe {
   margin-top: 350px;
 }
 
-.mb-5 {
-  margin-bottom: 5px !important;
-}
 .mb-10 {
   margin-bottom: 10px;
 }

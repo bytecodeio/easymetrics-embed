@@ -25,15 +25,12 @@ const EmbedDashboard = ({ setDashboard, setFilters }) => {
 
     )
 
-      .build()
+    .build()
 
-      .connect()
-      // the dashboard object passed here allows for sending messages/events to the embedded dashboard
-      // we save this to state, and we can later use this object to send a filter update event to the dashboard
-      .then((dashboard) => {
-        setDashboard(dashboard);
-        setLoading(false);
-      })
+    .connect()
+    .then(() => setLoading(false))
+
+
 
       .catch((error) => {
         console.error("An unexpected error occurred", error);
