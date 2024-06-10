@@ -1,34 +1,31 @@
 
-import React, { Fragment, useState, useRef, useEffect } from 'react';
+import React, { Fragment, useState, useEffect } from 'react';
 import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
 import "../../DragDrop.css";
 
-import { Col, Row, Container, Button} from 'react-bootstrap';
+import { Col, Row, Container } from 'react-bootstrap';
 
 import AOS from 'aos';
 import "aos/dist/aos.css";
 
-
-import Vis from "../EmbedDashboard/VizComponent.js";
-import EmbedDashboard from "../EmbedDashboard/EmbedDashboard";
-import EmbedDashboard2 from "../EmbedDashboard/EmbedDashboard2";
-import EmbedDashboard3 from "../EmbedDashboard/EmbedDashboard3";
-import EmbedDashboard4 from "../EmbedDashboard/EmbedDashboard4";
+import { sdk } from "../../helpers/CorsSessionHelper";
+import EmbedAnyDashboard from '../EmbedDashboard/EmbedAnyDashboard.js';
+import FilterPills from '../menu/FilterPills.js';
 
 
 function TopSection() {
   const [navbar, setNavbar] = useState(false);
   const [modalIsOpen, setIsOpen] = useState(false);
   const [show5, setShow5] = useState(false);
-
   const [toggle, setToggle] = useState(false);
-
   const [selectedButton, setSelectedButton] = useState("list")
-
   const [wide, setWide] = useState(false);
+  const [tiles, setTiles] = useState([]);
+  const [columns, setColumns] = useState({});
+  const [filterSet, setFilterSet] = useState(new Set());
 
-const handleButtonGroupClick = (v) => {
-      setSelectedButton(v)
+  const handleButtonGroupClick = (v) => {
+    setSelectedButton(v)
   }
 
   useEffect(() => {
@@ -37,158 +34,207 @@ const handleButtonGroupClick = (v) => {
     });
   }, []);
 
-const changeIt = () => {
-
-
-setToggle(!toggle);
-
-}
-  const openModal = () => {
-      setIsOpen(true);
-  }
-  const closeModal = () => {
-      setIsOpen(!modalIsOpen);
+  const changeIt = () => {
+    setToggle(!toggle);
   }
 
-  const toggleMenu =()=>{
-    if(window.scrollY >= 68) {
+  const toggleMenu = () => {
+    if (window.scrollY >= 68) {
       setNavbar(true)
-    } else{
+    } else {
       setNavbar(false)
     }
   }
 
   window.addEventListener('scroll', toggleMenu);
 
-  const tasks = [
-    { id: "10", content:  <EmbedDashboard2/>},
-    { id: "12", content: <EmbedDashboard/>},
-    { id: "13", content:  <EmbedDashboard3/>},
-    { id: "14", content: <EmbedDashboard4/>},
+  const getTileStatus = (tiles) => {
+    return {
+      tiles: {
+        name: "Tiles",
+        items: tiles,
 
-  ];
+      },
+      column1: {
+        name: "List Style Dashboard",
+        image: "",
+        items: [],
+      },
+  }}
 
-  const taskStatus = {
-    first: {
-      name: "Looks",
-      items: tasks,
-
+  const getTileStatus2 = (tiles) => {
+    console.log('tiles2', tiles)
+   return { tiles: {
+      name: "Tiles",
+      items: tiles,
     },
-
-    requested: {
-      name: "Dashboard",
-      image: "",
+    column1: {
+      name: "Left Dashboard Column",
       items: [],
-
     },
+    column2: {
+      name: "Right Dashboard Column",
+      items: [],
+    },
+  }};
 
+  const getFiltersForTile = async (tileId) => {
+    const response = await sdk.ok(sdk.dashboard(
+      tileId, 'dashboard_filters'))
+      console.log(response)
+    return response.dashboard_filters
+  }
+
+  const addTileFilters = async (tileId) => {
+    const newFilters = await getFiltersForTile(tileId) 
+    let newSet = new Set(filterSet)
+    newFilters.forEach((filter) => {
+      newSet.add(filter.name)
+    })
+    setFilterSet(newSet)
+  }
+
+  // This function removes filter entries from the set when a tile is removed
+  // It will not remove filters if they are still used by another tile
+  // This fucntion is independent of how many 'columns' there are in the layout
+  const removeFilterTiles = async (tileId) => {
+    let tilesIdsToIgnore = columns.tiles.items.map(tile=>tile.id)
+    tilesIdsToIgnore.push(tileId)
+    const selectedTileIds = tiles.filter(tile => !tilesIdsToIgnore.includes(tile.id)).map(tile => tile.id)
+    let allSelectedTileFilters = []
+    await selectedTileIds.forEach(async (selectedTileId) => {
+      const filters = await getFiltersForTile(selectedTileId)
+      allSelectedTileFilters.push(filters)
+    })
+    const filtersInRemovedTile = await getFiltersForTile(tileId) 
+    let filtersToRemove = filtersInRemovedTile.filter(filter => {
+      let keep = true
+      allSelectedTileFilters.forEach(tileFilters => {
+        if (tileFilters.map(filter=>filter.name).includes(filter.name)) {
+          keep = false
+        }
+      })
+      return keep
+    })
+    let newSet = new Set(filterSet)
+    
+    filtersToRemove.forEach((filter) => {
+      newSet.delete(filter.name)
+    })
+    setFilterSet(newSet)
+  }
+
+  const removeFilters = (filterName) => {
+    let newSet = new Set(filterSet)
+    newSet.delete(filterName)
+    setFilterSet(newSet)
+  }
+
+  // These fetches will need to pull from a predefined Folder. 
+  // It's now pulling from a folder called 'Tiles'.
+  const getTiles = async () => {
+    let response = await sdk.ok(sdk.search_folders(
+      {
+        fields: 'dashboards',
+        name: 'Tiles'
+      }))
+
+    // Only pull the first matching folder's dashboards
+    const newTiles = response[0].dashboards.map((dashboardMetadata) => {
+      const id = dashboardMetadata.id
+      return { id: id, content: <EmbedAnyDashboard id={id} />, title: dashboardMetadata.title }
+    })
+    setTiles(newTiles)
+    setColumns(getTileStatus(newTiles))
   };
 
-  const taskStatus2 = {
-    first: {
-      name: "Looks",
-      items: tasks,
+  useEffect(() => {
+    getTiles()
+  }, []);
 
-    },
+  const changeLayout = (layout) => {
+    const wide = layout !== 'grid'
+    wide ? setColumns(getTileStatus(tiles)) : setColumns(getTileStatus2(tiles))
+    setWide(wide)
+  }
 
-    requested: {
-      name: "Dashboard",
+  const onDragEnd = (result, columns, setColumns) => {
+    if (!result.destination) return;
+    const { source, destination } = result;
 
-      items: [],
-
-    },
-    requested2: {
-       name: "hi",
-      items: [],
-
-    },
-
+    if (source.droppableId !== destination.droppableId) {
+      const sourceColumn = columns[source.droppableId];
+      const destColumn = columns[destination.droppableId];
+      const sourceItems = [...sourceColumn.items];
+      const destItems = [...destColumn.items];
+      const [removed] = sourceItems.splice(source.index, 1);
+      destItems.splice(destination.index, 0, removed);
+      setColumns({
+        ...columns,
+        [source.droppableId]: {
+          ...sourceColumn,
+          items: sourceItems
+        },
+        [destination.droppableId]: {
+          ...destColumn,
+          items: destItems
+        }
+      });
+      // handle new filters
+      if (destination.droppableId !== 'tiles') {
+        addTileFilters(removed.id)
+      } else {
+        removeFilterTiles(removed.id)
+      }
+    } else {
+      const column = columns[source.droppableId];
+      const copiedItems = [...column.items];
+      const [removed] = copiedItems.splice(source.index, 1);
+      copiedItems.splice(destination.index, 0, removed);
+      setColumns({
+        ...columns,
+        [source.droppableId]: {
+          ...column,
+          items: copiedItems
+        }
+      });
+    }
   };
 
-  const [columns, setColumns] = useState(taskStatus);
-
-const changeLayout = () => {
-setColumns(taskStatus2)
-setWide(true)
-}
+  // Example usage of mySet
+  // To add to the set: setMySet(new Set(mySet).add(newValue));
+  // To delete from the set: setMySet(new Set(mySet).delete(valueToDelete));
+  // To check if a value is in the set: mySet.has(valueToCheck);
 
 
-const changeLayout2 = () => {
-setColumns(taskStatus)
-setWide(false)
-}
-
-
-
-
-const onDragEnd = (result, columns, setColumns) => {
-if (!result.destination) return;
-const { source, destination } = result;
-
-if (source.droppableId !== destination.droppableId) {
-  const sourceColumn = columns[source.droppableId];
-  const destColumn = columns[destination.droppableId];
-  const sourceItems = [...sourceColumn.items];
-  const destItems = [...destColumn.items];
-  const [removed] = sourceItems.splice(source.index, 1);
-  destItems.splice(destination.index, 0, removed);
-  setColumns({
-    ...columns,
-    [source.droppableId]: {
-      ...sourceColumn,
-      items: sourceItems
-    },
-    [destination.droppableId]: {
-      ...destColumn,
-      items: destItems
-    }
-  });
-} else {
-  const column = columns[source.droppableId];
-  const copiedItems = [...column.items];
-  const [removed] = copiedItems.splice(source.index, 1);
-  copiedItems.splice(destination.index, 0, removed);
-  setColumns({
-    ...columns,
-    [source.droppableId]: {
-      ...column,
-      items: copiedItems
-    }
-  });
-}
-};
-
-    console.log(toggle, "toggle")
-    console.log(wide, "wide")
-    console.log(show5, "show5")
-
-
+  if (tiles.length === 0) {
+    return <div>Loading tiles...</div>;
+  }
+  console.log('filterset:',filterSet)
   return (
+    <Fragment>
+      <Container fluid>
 
-<Fragment>
+        <div className="hero-banner-five" id="home">
+          <Container>
+            <Row>
+              <Col sm={12} md={7} lg={6}>
 
-<Container fluid>
+                <h1 className="hero-heading">Easy <span>Metrics</span></h1>
+                <p className="text-lg mb-50 pt-40 pe-xl-5 md-pt-30 md-mb-40">Drive operational performance across your network. Easy Metrics empowers companies to cut waste, ID cost to serve, and create an engaged and productive workforce</p>
+              </Col>
+            </Row>
 
-<div className="hero-banner-five" id="home">
-        <Container>
-              <Row>
-                <Col sm={12} md={7} lg={6}>
-
-                      <h1 className="hero-heading">Easy <span>Metrics</span></h1>
-                      <p className="text-lg mb-50 pt-40 pe-xl-5 md-pt-30 md-mb-40">Drive operational performance across your network. Easy Metrics empowers companies to cut waste, ID cost to serve, and create an engaged and productive workforce</p>
-                </Col>
-              </Row>
-
-        </Container>
+          </Container>
           <div className="illustration-holder move">
-          <img src="https://www.easymetrics.com/wp-content/uploads/2020/08/product-concept.png"/>
+            <img src="https://www.easymetrics.com/wp-content/uploads/2020/08/product-concept.png" />
           </div>
 
           <div className="shapes oval-one" />
-      </div>
+        </div>
 
 
-      <div className="theme-inner-banner" id="about">
+        <div className="theme-inner-banner" id="about">
           <Container>
             <h2 class="intro-title text-center pb-5">&nbsp;</h2>
             <ul class="page-breadcrumb style-none d-flex justify-content-center">
@@ -197,142 +243,143 @@ if (source.droppableId !== destination.droppableId) {
           </Container>
           <img src="./images/shape_38.svg" alt="" class="shapes shape-one" />
           <img src="./images/shape_39.svg" alt="" class="shapes shape-two" />
-      </div>
+        </div>
 
         <div className="position-relative mt-5 mb-5">
-            <Container fluid>
-                <Row className="service-details position-relative mt-5 mb-150 lg-mb-100">
+          <Container fluid>
+            <Row className="service-details position-relative mt-5 mb-150 lg-mb-100">
 
-                <Col sm={12} md={12} lg={12} className={wide === true && show5 === true && toggle  === true ? "newLength" : ""}>
-                  <div className="service-details-meta">
-                      <h2 className="text-center mb-5">Drag and drop looks to create a dashboard</h2>
-
+              <Col sm={12} md={12} lg={12} className={wide === true && show5 === true && toggle === true ? "newLength" : ""} >
+                <div className="service-details-meta">
+                  <h2 className="text-center mb-5">Drag and drop tiles to create a dashboard</h2>
+                  <div>Dashboard Filters: <FilterPills filters={Array.from(filterSet)} removeFilter={removeFilters} />
                   </div>
+                </div>
 
-                  <Row>
-                    <div className="position-relative">
+                <Row>
+                  <div className="position-relative">
 
-                      <Container fluid className="mb-5 pe-5 ps-5 position-relative">
+                    <Container fluid className="mb-5 pe-5 ps-5 position-relative">
 
                       <div className="d-flex justify-content-between gridOptions">
-                      <div class="d-flex align-items-baseline">
-                       <i
-                       class={toggle ? "far fa-arrow-left back reverse" : "far fa-arrow-left back"}
+                        <div class="d-flex align-items-baseline">
+                          <i
+                            class={toggle ? "far fa-arrow-left back reverse" : "far fa-arrow-left back"}
 
-                       onClick={() => {setShow5(!show5);changeIt();}}
-                       >
+                            onClick={() => { setShow5(!show5); changeIt(); }}
+                          >
 
-                       </i>
-                        <p className="small">{toggle === true && wide === false ? "slide dashboard back" : "slide dashboard full width"}</p>
-                       </div>
-                       <div class="d-flex align-items-baseline">
-                      <p className="small">pick layout</p>
+                          </i>
+                          <p className="small">{toggle === true && wide === false ? "slide dashboard back" : "slide dashboard full width"}</p>
+                        </div>
+                        <div class="d-flex align-items-baseline">
+                          <p className="small">pick layout</p>
 
-                      <i onClick={() => {handleButtonGroupClick("list");changeLayout2()}}
-                      className={selectedButton == "list" ? "far fa-bars toggled" : "far fa-bars"}
-                      value={"list"}></i>
-                      <i onClick={() => {handleButtonGroupClick("grid");changeLayout()}}
-                      className={selectedButton == "grid" ? "fas fa-th-large toggled" : "fas fa-th-large"}
-                      value={"grid"}></i>
+                          <i onClick={() => { handleButtonGroupClick("list"); changeLayout('list') }}
+                            className={selectedButton == "list" ? "far fa-bars toggled" : "far fa-bars"}
+                            value={"list"}></i>
+                          <i onClick={() => { handleButtonGroupClick("grid"); changeLayout('grid') }}
+                            className={selectedButton == "grid" ? "fas fa-th-large toggled" : "fas fa-th-large"}
+                            value={"grid"}></i>
 
-                       </div>
+                        </div>
                       </div>
 
-                        <Row className="mt-3">
+                      <Row className="mt-3">
 
-                          <DragDropContext
-                            onDragEnd={(result) => onDragEnd(result, columns, setColumns)}>
-                            {Object.entries(columns).map(([columnId, column], index) => {
-                              return (
+                        <DragDropContext
+                          onDragEnd={(result) => onDragEnd(result, columns, setColumns)}>
+                          {Object.entries(columns).map(([columnId, column], index) => {
+                            return (
 
-                             <Col xs={12} sm={6} md={6} className={selectedButton == "grid" ? "grid" : ""}>
+                              <Col xs={12} sm={6} md={6} className={selectedButton == "grid" ? "grid" : ""} key={columnId}>
                                 <div className={show5 ? "fullWidth app-content" : "app-content"}>
-                                <div key={columnId} class="tiles">
-                                <div className="d-flex justify-content-start align-items-center largeMargin">
-                                    <img src={column.image} className="img-responsive cute pe-3"></img>
-                                    <div className="d-flex flex-column"><h4>{column.name}</h4>
+                                  <div key={columnId} class="tiles">
+                                    <div className="d-flex justify-content-start align-items-center largeMargin">
+                                      <img src={column.image} className="img-responsive cute pe-3"></img>
+                                      <div className="d-flex flex-column"><h4>{column.name}</h4>
 
-                                    </div>
+                                      </div>
                                     </div>
 
                                     <div className="bubbles">
 
-                                    <Droppable droppableId={columnId} key={columnId}>
-                                      {(provided, snapshot) => {
-                                        return (
-                                          <div
-                                            {...provided.droppableProps}
-                                            ref={provided.innerRef}
-                                            style={{
-                                            background: snapshot.isDraggingOver
-                                              ? "transparent"
-                                              : "transparent",
-                                            padding: 0,
-                                            width: "100%",
-                                            minHeight: 1800
-                                          }}
+                                      <Droppable droppableId={columnId} key={columnId}>
+                                        {(provided, snapshot) => {
+                                          return (
+                                            <div
+                                              {...provided.droppableProps}
+                                              ref={provided.innerRef}
+                                              style={{
+                                                background: snapshot.isDraggingOver
+                                                  ? "transparent"
+                                                  : "transparent",
+                                                padding: 0,
+                                                width: "100%",
+                                                minHeight: 1800
+                                              }}
 
-                                          >
-                                            {column.items.map((item, index) => {
-                                              return (
-                                                <Draggable
-                                                  key={item.id}
-                                                  draggableId={item.id}
-                                                  index={index}
-                                                  className="drag"
-                                                >
-                                                  {(provided, snapshot) => {
-                                                    return (
-                                                      <div
-                                                        ref={provided.innerRef}
-                                                        {...provided.draggableProps}
-                                                        {...provided.dragHandleProps}
+                                            >
+                                              {column.items.map((item, index) => {
+                                                return (
+                                                  <Draggable
+                                                    key={item.id + index}
+                                                    draggableId={item.id}
+                                                    index={index}
+                                                    className="drag"
+                                                  >
+                                                    {(provided, snapshot) => {
+                                                      return (
+                                                        <div
+                                                          ref={provided.innerRef}
+                                                          {...provided.draggableProps}
+                                                          {...provided.dragHandleProps}
 
-                                                      >
-                                                        {item.content}
-                                                      </div>
-                                                    );
-                                                  }}
-                                                </Draggable>
-                                              );
-                                            })}
-                                            {provided.placeholder}
-                                          </div>
+                                                        >
+                                                          {item.content}
+                                                        </div>
+                                                      );
+                                                    }}
+                                                  </Draggable>
+                                                );
+                                              })}
+                                              {provided.placeholder}
+                                            </div>
 
-                                        );
-                                      }}
-                                    </Droppable>
+                                          );
+                                        }}
+                                      </Droppable>
                                     </div>
                                   </div>
 
-                                  </div>
-                                </Col>
+                                </div>
+                              </Col>
 
 
-                              );
-                            })}
-                          </DragDropContext>
-                        </Row>
-                        </Container>
+                            );
+                          })}
+                        </DragDropContext>
+                      </Row>
+                    </Container>
 
-                    </div>
-                  </Row>
+                  </div>
+                </Row>
 
 
 
-               </Col>
-              </Row>
+              </Col>
+            </Row>
 
-            </Container>
+          </Container>
 
-            <div className="shapes shape-one"/>
+          <div className="shapes shape-one" />
         </div>
 
-</Container>
+      </Container>
 
-</Fragment>
-)
+    </Fragment>
+  )
 
 }
 
-  export default TopSection;
+export default TopSection;
