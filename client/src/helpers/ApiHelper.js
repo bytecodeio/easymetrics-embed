@@ -31,6 +31,7 @@ const request = (method) => {
 
     // Update options if it has the body in case of Non-GET calls
     if (method !== "GET" && !!body) {
+      requestOptions.headers = requestOptions.headers || {};
       requestOptions.headers["Content-Type"] = "application/json";
       requestOptions.body = JSON.stringify(body);
     }

@@ -218,4 +218,47 @@ router.get("/dashboard/:id", async (req, res, next) => {
     .catch((e) => res.send({ error: e.message }));
 });
 
+router.get('/dashboard-lookml/:id', async (req, res) => {
+  try {
+    // Extract the dashboard ID from the request parameters
+    const dashboardId = parseInt(req.params.id, 10);
+
+    // Call the SDK function with the dashboard ID
+    const responseTest = await sdk.ok(sdk.dashboard_lookml(dashboardId));
+
+    // Send the response back to the client
+    res.json(responseTest);
+  } catch (error) {
+    // Handle any errors
+    console.error('Error fetching LookML dashboard:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+
+router.post('/import-dashboard', async (req, res) => {
+  try {
+    // Extract folder_id and lookml (newYaml) from the request body
+    const { folder_id, lookml } = req.body;
+
+    // Ensure folder_id and lookml are provided
+    if (!folder_id || !lookml) {
+      return res.status(400).send('Missing folder_id or lookml in request body');
+    }
+
+    // Call the SDK function with the folder_id and lookml
+    let response = await sdk.ok(sdk.import_dashboard_from_lookml({
+      folder_id: folder_id,
+      lookml: lookml
+    }));
+
+    // Send the response back to the client
+    res.json(response);
+  } catch (error) {
+    // Handle any errors
+    console.error('Error importing dashboard from LookML:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
 module.exports = router;
