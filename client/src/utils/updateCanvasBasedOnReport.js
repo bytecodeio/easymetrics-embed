@@ -3,7 +3,7 @@ import yaml from 'js-yaml';
 // The api helper method here is used for these calls.
 import { api } from "../helpers/ApiHelper";
 
-async function updateCanvasBasedOnReport(report, tiles, setColumns, setDashboardName, setFilterSet, setWide) {
+async function updateCanvasBasedOnReport(report, tiles, setColumns, setDashboardName, setFilterSet, setWide, setLayout) {
     // Step 1: Fetch the report data based on reportName
     const response = await api
         .get(`${process.env.API_HOST}/api/dashboard-lookml/${report.id}`)
@@ -16,9 +16,9 @@ async function updateCanvasBasedOnReport(report, tiles, setColumns, setDashboard
         const sourceTileDashboardIds = reportData.elements.map(element => element.source_tile_dashboard_id);
         
         // Step 3: Determine and set width
-        const isWide = reportData.elements.every(element => element.width === 24);
+        const isWide = reportData.elements.some(element => element.width === '24' || element.width === 24);
         setWide(isWide);
-
+        setLayout(isWide ? 'list' : 'grid');
         // Based on the selected layout, the 
         // dashboard will be displayed in a single column or two columns
         // Step 4: Set the columns based on the layout
@@ -38,20 +38,24 @@ async function updateCanvasBasedOnReport(report, tiles, setColumns, setDashboard
                 },
             }); // Ensure unique IDs and set columns
         } else {
+            console.log('inside else')
             // find the tiles for elements in the first column
             const firstColumnTiles = tiles
                 .filter(tile => reportData.elements
-                    .filter(tile => tile.row === 0)
-                    .map(tile => tile.source_title_dashboard_id)
+                    .filter(element => element.row === 0)
+                    .map(element => element.source_tile_dashboard_id)
                     .includes(tile.id));
 
             // find the tiles for elements in the second column
             const secondColumnTiles = tiles
                 .filter(tile => reportData.elements
-                    .filter(tile => tile.row === 12)
-                    .map(tile => tile.source_title_dashboard_id)
+                    .filter(element => element.row !== 0)
+                    .map(element => element.source_tile_dashboard_id)
                     .includes(tile.id));
+            console.log('firstColumnTiles', firstColumnTiles)
+            console.log('secondColumnTiles', secondColumnTiles)
             const unusedTiles = tiles.filter(tile => !sourceTileDashboardIds.includes(tile.id));
+            console.log('unusedTiles', unusedTiles)
             setColumns({
                 tiles: {
                     name: "Tiles",
@@ -59,12 +63,10 @@ async function updateCanvasBasedOnReport(report, tiles, setColumns, setDashboard
                 },
                 column1: {
                     name: "Left Dashboard Column",
-                    image: "",
                     items: firstColumnTiles,
                 },
                 column2: {
                     name: "Right Dashboard Column",
-                    image: "",
                     items: secondColumnTiles,
                 },
             })

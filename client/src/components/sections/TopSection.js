@@ -180,7 +180,7 @@ function TopSection() {
     const report = reports.find(report => report.title === reportName);
     // Placeholder for the function that updates dashboardName, filterSet, columns, and wide
     // This function will be defined in another file and imported here
-    updateCanvasBasedOnReport(report, tiles, setColumns, setDashboardName, setFilterSet, setWide);
+    updateCanvasBasedOnReport(report, tiles, setColumns, setDashboardName, setFilterSet, setWide, setSelectedButton);
   };
 
   useEffect(() => {
@@ -237,6 +237,7 @@ function TopSection() {
     }
   };
 
+  // Handes the new report creation and shows it as a modal.
   const handleCreateDashboard = async () => {
     await createNewDashboard(columns, Array.from(filterSet), "566", dashboardName, setNewDashboardId)
     setShowModal(true); 
@@ -286,17 +287,20 @@ function TopSection() {
 
               <Col sm={12} md={12} lg={12} className={wide === true && show5 === true && toggle === true ? "newLength" : ""} >
                 <div className="service-details-meta">
-                  <h2 className="text-center mb-5">Drag and drop tiles to create a dashboard</h2>
+                  <h2 className="text-center mb-5">Drag and drop tiles to create a report</h2>
                 </div>
 
                 <Container>
                 <Row className="mb-2 align-items-center">
                   <Col xs="auto">
+                    <div>Modify existing report:</div>
+                  </Col>
+                  <Col>
                     <Form.Select 
                       aria-label="Start with existing report" 
                       value={selectedReport || "Select an existing report to modify"} onChange={handleReportChange}>
                       {console.log(reports)}
-                      <option>Select a report</option>
+                      <option>Select an existing report to work from</option>
                       {reports.map((report, index) => (
                         <option key={index} value={report.title}>{report.title}</option>
                       ))}
@@ -311,11 +315,11 @@ function TopSection() {
                       <FilterPills filters={Array.from(filterSet)} removeFilter={removeFilters} />
                     </Col>
                   </Row>
-                  <Form>
                     <Row className="align-items-center">
-                      <Col md={8} className="mb-2">
-                      <Form.Group controlId="dashboardName">
+                      <Col className="mb-2">
                         <div>Dashboard Name:</div>
+                      </Col>
+                      <Col>
                         <Form.Control
                           type="text"
                           placeholder="Enter Dashboard Name"
@@ -323,16 +327,14 @@ function TopSection() {
                           onChange={(e) => setDashboardName(e.target.value)}
                           style={{ borderColor: 'gray', color: 'black' }} // Existing custom styles
                         />
-                      </Form.Group>
 
                       </Col>
-                      <Col md={4} className="mb-2">
+                      <Col className="mb-2">
                         <Button onClick={handleCreateDashboard}>
                           Create Dashboard
                         </Button>
                       </Col>
                     </Row>
-                  </Form>
                 </Container>
                 <Row>
                   <div className="position-relative">
