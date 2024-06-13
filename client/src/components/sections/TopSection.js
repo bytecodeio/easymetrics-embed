@@ -2,8 +2,7 @@
 import React, { Fragment, useState, useEffect } from 'react';
 import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
 import "../../DragDrop.css";
-
-import { Col, Row, Container } from 'react-bootstrap';
+import { Col, Row, Container, Button, Form, Modal } from 'react-bootstrap';
 
 import AOS from 'aos';
 import "aos/dist/aos.css";
@@ -11,7 +10,8 @@ import "aos/dist/aos.css";
 import { sdk } from "../../helpers/CorsSessionHelper";
 import EmbedAnyDashboard from '../EmbedDashboard/EmbedAnyDashboard.js';
 import FilterPills from '../menu/FilterPills.js';
-
+import createNewDashboard from '../../utils/createNewDashboard.js';
+import updateCanvasBasedOnReport from '../../utils/updateCanvasBasedOnReport.js';
 
 function TopSection() {
   const [navbar, setNavbar] = useState(false);
@@ -23,6 +23,11 @@ function TopSection() {
   const [tiles, setTiles] = useState([]);
   const [columns, setColumns] = useState({});
   const [filterSet, setFilterSet] = useState(new Set());
+  const [dashboardName, setDashboardName] = useState('');
+  const [newDashboardId, setNewDashboardId] = useState('');
+  const [showModal, setShowModal] = useState(false);
+  const [reports, setReports] = useState([]);
+  const [selectedReport, setSelectedReport] = useState(null);
 
   const handleButtonGroupClick = (v) => {
     setSelectedButton(v)
@@ -60,33 +65,36 @@ function TopSection() {
         image: "",
         items: [],
       },
-  }}
+    }
+  }
 
   const getTileStatus2 = (tiles) => {
-    console.log('tiles2', tiles)
-   return { tiles: {
-      name: "Tiles",
-      items: tiles,
-    },
-    column1: {
-      name: "Left Dashboard Column",
-      items: [],
-    },
-    column2: {
-      name: "Right Dashboard Column",
-      items: [],
-    },
-  }};
+    return {
+      tiles: {
+        name: "Tiles",
+        items: tiles,
+      },
+      column1: {
+        name: "Left Dashboard Column",
+        items: [],
+      },
+      column2: {
+        name: "Right Dashboard Column",
+        items: [],
+      },
+    }
+  };
 
+  // This function uses the sdk directly from the frontend. This works sometimes. :)
+  // It gets the filters for an individual dashboard 
   const getFiltersForTile = async (tileId) => {
     const response = await sdk.ok(sdk.dashboard(
       tileId, 'dashboard_filters'))
-      console.log(response)
     return response.dashboard_filters
   }
-
+  // This function adds filter entries to the set when a tile is added to the canvas
   const addTileFilters = async (tileId) => {
-    const newFilters = await getFiltersForTile(tileId) 
+    const newFilters = await getFiltersForTile(tileId)
     let newSet = new Set(filterSet)
     newFilters.forEach((filter) => {
       newSet.add(filter.name)
@@ -98,7 +106,7 @@ function TopSection() {
   // It will not remove filters if they are still used by another tile
   // This fucntion is independent of how many 'columns' there are in the layout
   const removeFilterTiles = async (tileId) => {
-    let tilesIdsToIgnore = columns.tiles.items.map(tile=>tile.id)
+    let tilesIdsToIgnore = columns.tiles.items.map(tile => tile.id)
     tilesIdsToIgnore.push(tileId)
     const selectedTileIds = tiles.filter(tile => !tilesIdsToIgnore.includes(tile.id)).map(tile => tile.id)
     let allSelectedTileFilters = []
@@ -106,24 +114,25 @@ function TopSection() {
       const filters = await getFiltersForTile(selectedTileId)
       allSelectedTileFilters.push(filters)
     })
-    const filtersInRemovedTile = await getFiltersForTile(tileId) 
+    const filtersInRemovedTile = await getFiltersForTile(tileId)
     let filtersToRemove = filtersInRemovedTile.filter(filter => {
       let keep = true
       allSelectedTileFilters.forEach(tileFilters => {
-        if (tileFilters.map(filter=>filter.name).includes(filter.name)) {
+        if (tileFilters.map(filter => filter.name).includes(filter.name)) {
           keep = false
         }
       })
       return keep
     })
     let newSet = new Set(filterSet)
-    
+
     filtersToRemove.forEach((filter) => {
       newSet.delete(filter.name)
     })
     setFilterSet(newSet)
   }
 
+  // This function removes the filters from the set when they are X'd out
   const removeFilters = (filterName) => {
     let newSet = new Set(filterSet)
     newSet.delete(filterName)
@@ -148,8 +157,35 @@ function TopSection() {
     setColumns(getTileStatus(newTiles))
   };
 
+  // These fetches will need to pull from a predefined Folder. 
+  // It's now pulling from a folder called 'Client Dashboards'.
+  const getReports = async () => {
+    let response = await sdk.ok(sdk.search_folders(
+      {
+        fields: 'dashboards',
+        name: 'Client Dashboards'
+      }))
+
+    // Only pull the first matching folder's dashboards
+    const newReports = response[0].dashboards.map((dashboardMetadata) => {
+      const id = dashboardMetadata.id
+      return { id: id, content: <EmbedAnyDashboard id={id} />, title: dashboardMetadata.title }
+    })
+    setReports(newReports)
+  };
+
+  const handleReportChange = (event) => {
+    const reportName = event.target.value;
+    setSelectedReport(reportName);
+    const report = reports.find(report => report.title === reportName);
+    // Placeholder for the function that updates dashboardName, filterSet, columns, and wide
+    // This function will be defined in another file and imported here
+    updateCanvasBasedOnReport(report, tiles, setColumns, setDashboardName, setFilterSet, setWide);
+  };
+
   useEffect(() => {
     getTiles()
+    getReports()
   }, []);
 
   const changeLayout = (layout) => {
@@ -201,16 +237,15 @@ function TopSection() {
     }
   };
 
-  // Example usage of mySet
-  // To add to the set: setMySet(new Set(mySet).add(newValue));
-  // To delete from the set: setMySet(new Set(mySet).delete(valueToDelete));
-  // To check if a value is in the set: mySet.has(valueToCheck);
+  const handleCreateDashboard = async () => {
+    await createNewDashboard(columns, Array.from(filterSet), "566", dashboardName, setNewDashboardId)
+    setShowModal(true); 
+  }
 
 
   if (tiles.length === 0) {
     return <div>Loading tiles...</div>;
   }
-  console.log('filterset:',filterSet)
   return (
     <Fragment>
       <Container fluid>
@@ -252,10 +287,53 @@ function TopSection() {
               <Col sm={12} md={12} lg={12} className={wide === true && show5 === true && toggle === true ? "newLength" : ""} >
                 <div className="service-details-meta">
                   <h2 className="text-center mb-5">Drag and drop tiles to create a dashboard</h2>
-                  <div>Dashboard Filters: <FilterPills filters={Array.from(filterSet)} removeFilter={removeFilters} />
-                  </div>
                 </div>
 
+                <Container>
+                <Row className="mb-2 align-items-center">
+                  <Col xs="auto">
+                    <Form.Select 
+                      aria-label="Start with existing report" 
+                      value={selectedReport || "Select an existing report to modify"} onChange={handleReportChange}>
+                      {console.log(reports)}
+                      <option>Select a report</option>
+                      {reports.map((report, index) => (
+                        <option key={index} value={report.title}>{report.title}</option>
+                      ))}
+                    </Form.Select>
+                  </Col>
+                </Row>
+                  <Row className="mb-2 align-items-center"> {/* Use align-items-center to vertically align items in the middle */}
+                    <Col xs="auto"> {/* Use xs="auto" to only take as much space as needed */}
+                      <div>Dashboard Filters:</div>
+                    </Col>
+                    <Col>
+                      <FilterPills filters={Array.from(filterSet)} removeFilter={removeFilters} />
+                    </Col>
+                  </Row>
+                  <Form>
+                    <Row className="align-items-center">
+                      <Col md={8} className="mb-2">
+                      <Form.Group controlId="dashboardName">
+                        <div>Dashboard Name:</div>
+                        <Form.Control
+                          type="text"
+                          placeholder="Enter Dashboard Name"
+                          value={dashboardName}
+                          onChange={(e) => setDashboardName(e.target.value)}
+                          style={{ borderColor: 'gray', color: 'black' }} // Existing custom styles
+                        />
+                      </Form.Group>
+
+                      </Col>
+                      <Col md={4} className="mb-2">
+                        <Button onClick={handleCreateDashboard}>
+                          Create Dashboard
+                        </Button>
+                      </Col>
+                    </Row>
+                  </Form>
+                </Container>
                 <Row>
                   <div className="position-relative">
 
@@ -286,7 +364,6 @@ function TopSection() {
                       </div>
 
                       <Row className="mt-3">
-
                         <DragDropContext
                           onDragEnd={(result) => onDragEnd(result, columns, setColumns)}>
                           {Object.entries(columns).map(([columnId, column], index) => {
@@ -374,9 +451,15 @@ function TopSection() {
 
           <div className="shapes shape-one" />
         </div>
-
       </Container>
-
+      <Modal show={showModal} onHide={() => setShowModal(false)}>
+          <Modal.Header closeButton>
+              <Modal.Title>Dashboard Created</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+              {newDashboardId && <EmbedAnyDashboard id={newDashboardId} />}
+          </Modal.Body>
+      </Modal>
     </Fragment>
   )
 

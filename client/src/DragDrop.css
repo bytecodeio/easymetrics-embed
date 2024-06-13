@@ -202,9 +202,6 @@ a{
 
 @media (min-width: 992px) {
 
-  iframe{
-    display: none
-  }
 
   .col-md-6 {
     flex: 0 0 auto;
