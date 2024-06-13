@@ -85,7 +85,8 @@ config.authenticatedUser =
       "access_data",
       "see_looks",
       "see_user_dashboards",
-      "see_lookml_dashboards"
+      "see_lookml_dashboards",
+      "see_lookml"
     ],
     "models": ["excel-multisheet-example", "test_project","sales_demo_the_look", "traffic_safety"],
     //user2 will be localized into a different language

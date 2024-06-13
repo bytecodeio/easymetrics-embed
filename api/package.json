@@ -7,7 +7,7 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
-    "@looker/sdk-node": "^21.0.9",
+    "@looker/sdk-node": "^24.10.0",
     "cookie-parser": "~1.4.4",
     "cors": "^2.8.5",
     "create-hmac": "^1.1.7",
