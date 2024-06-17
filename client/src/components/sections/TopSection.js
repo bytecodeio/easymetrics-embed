@@ -28,6 +28,7 @@ function TopSection() {
   const [showModal, setShowModal] = useState(false);
   const [reports, setReports] = useState([]);
   const [selectedReport, setSelectedReport] = useState(null);
+  const [folderNumber, setFolderNumber] = useState(null); 
 
   const handleButtonGroupClick = (v) => {
     setSelectedButton(v)
@@ -162,9 +163,13 @@ function TopSection() {
   const getReports = async () => {
     let response = await sdk.ok(sdk.search_folders(
       {
-        fields: 'dashboards',
+        fields: 'dashboards, id',
         name: 'Client Dashboards'
       }))
+
+      // set the folder number for later use
+      console.log(response)
+      setFolderNumber(response[0].id)
 
     // Only pull the first matching folder's dashboards
     const newReports = response[0].dashboards.map((dashboardMetadata) => {
@@ -239,7 +244,8 @@ function TopSection() {
 
   // Handes the new report creation and shows it as a modal.
   const handleCreateDashboard = async () => {
-    await createNewDashboard(columns, Array.from(filterSet), "566", dashboardName, setNewDashboardId)
+    console.log(folderNumber)
+    await createNewDashboard(columns, Array.from(filterSet), folderNumber, dashboardName, setNewDashboardId)
     setShowModal(true); 
   }
 
@@ -458,7 +464,7 @@ function TopSection() {
           <Modal.Header closeButton>
               <Modal.Title>Dashboard Created</Modal.Title>
           </Modal.Header>
-          <Modal.Body>
+          <Modal.Body >
               {newDashboardId && <EmbedAnyDashboard id={newDashboardId} />}
           </Modal.Body>
       </Modal>
