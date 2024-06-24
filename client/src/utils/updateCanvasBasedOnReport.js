@@ -1,6 +1,4 @@
 import yaml from 'js-yaml';
-// Some API calls are needed to be run on the api server. 
-// The api helper method here is used for these calls.
 import { api } from "../helpers/ApiHelper";
 
 async function updateCanvasBasedOnReport(report, tiles, setColumns, setDashboardName, setFilterSet, setWide, setLayout) {

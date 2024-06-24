@@ -7,8 +7,9 @@ import { Col, Row, Container, Button, Form, Modal } from 'react-bootstrap';
 import AOS from 'aos';
 import "aos/dist/aos.css";
 
-import { sdk } from "../../helpers/CorsSessionHelper";
+import { api } from "../../helpers/ApiHelper";
 import EmbedAnyDashboard from '../EmbedDashboard/EmbedAnyDashboard.js';
+import EmbedImage from '../EmbedDashboard/EmbedImage.js';
 import FilterPills from '../menu/FilterPills.js';
 import createNewDashboard from '../../utils/createNewDashboard.js';
 import updateCanvasBasedOnReport from '../../utils/updateCanvasBasedOnReport.js';
@@ -40,6 +41,7 @@ function TopSection() {
     });
   }, []);
 
+  // This function toggles the canvas between one column and two columns
   const changeIt = () => {
     setToggle(!toggle);
   }
@@ -54,6 +56,7 @@ function TopSection() {
 
   window.addEventListener('scroll', toggleMenu);
 
+  // This is the initial canvas state for a single-coloumn layout
   const getTileStatus = (tiles) => {
     return {
       tiles: {
@@ -69,6 +72,7 @@ function TopSection() {
     }
   }
 
+  // This is the initial canvas state for a two-column layout
   const getTileStatus2 = (tiles) => {
     return {
       tiles: {
@@ -89,10 +93,11 @@ function TopSection() {
   // This function uses the sdk directly from the frontend. This works sometimes. :)
   // It gets the filters for an individual dashboard 
   const getFiltersForTile = async (tileId) => {
-    const response = await sdk.ok(sdk.dashboard(
-      tileId, 'dashboard_filters'))
+    const response = await api
+        .get(`${process.env.API_HOST}/api/dashboard-filters/${tileId}`)
     return response.dashboard_filters
   }
+
   // This function adds filter entries to the set when a tile is added to the canvas
   const addTileFilters = async (tileId) => {
     const newFilters = await getFiltersForTile(tileId)
@@ -143,16 +148,15 @@ function TopSection() {
   // These fetches will need to pull from a predefined Folder. 
   // It's now pulling from a folder called 'Tiles'.
   const getTiles = async () => {
-    let response = await sdk.ok(sdk.search_folders(
-      {
-        fields: 'dashboards',
-        name: 'Tiles'
-      }))
+    
+    const response = await api
+        .get(`${process.env.API_HOST}/api/fetch-tiles`)
 
     // Only pull the first matching folder's dashboards
-    const newTiles = response[0].dashboards.map((dashboardMetadata) => {
-      const id = dashboardMetadata.id
-      return { id: id, content: <EmbedAnyDashboard id={id} />, title: dashboardMetadata.title }
+    const newTiles = response[0].dashboards.map( (dashboardMetadata) => {
+      const id = dashboardMetadata.id 
+      const title = dashboardMetadata.title
+      return { id: id, content: <EmbedImage id={id} title={title} />, title: dashboardMetadata.title }
     })
     setTiles(newTiles)
     setColumns(getTileStatus(newTiles))
@@ -161,37 +165,38 @@ function TopSection() {
   // These fetches will need to pull from a predefined Folder. 
   // It's now pulling from a folder called 'Client Dashboards'.
   const getReports = async () => {
-    let response = await sdk.ok(sdk.search_folders(
-      {
-        fields: 'dashboards, id',
-        name: 'Client Dashboards'
-      }))
+    
+    const customerReportsResponse = await api
+        .get(`${process.env.API_HOST}/api/fetch-customer-reports`)
 
-      // set the folder number for later use
-      console.log(response)
-      setFolderNumber(response[0].id)
+    // set the folder number for later use when creating a new dashboard
+    setFolderNumber(customerReportsResponse[0].id)
 
     // Only pull the first matching folder's dashboards
-    const newReports = response[0].dashboards.map((dashboardMetadata) => {
+    const clientReports = customerReportsResponse[0].dashboards.map((dashboardMetadata) => {
       const id = dashboardMetadata.id
       return { id: id, content: <EmbedAnyDashboard id={id} />, title: dashboardMetadata.title }
     })
-    setReports(newReports)
+
+    const sharedReportsResponse = await api
+    .get(`${process.env.API_HOST}/api/fetch-shared-reports`)
+
+    // Only pull the first matching folder's dashboards
+    const sharedReports = sharedReportsResponse[0].dashboards.map((dashboardMetadata) => {
+      const id = dashboardMetadata.id
+      return { id: id, content: <EmbedAnyDashboard id={id} />, title: dashboardMetadata.title }
+    })
+
+    setReports([...clientReports, ...sharedReports])
   };
 
+  // This function rehydrates the canvas when selecting a report to modify
   const handleReportChange = (event) => {
     const reportName = event.target.value;
     setSelectedReport(reportName);
     const report = reports.find(report => report.title === reportName);
-    // Placeholder for the function that updates dashboardName, filterSet, columns, and wide
-    // This function will be defined in another file and imported here
     updateCanvasBasedOnReport(report, tiles, setColumns, setDashboardName, setFilterSet, setWide, setSelectedButton);
   };
-
-  useEffect(() => {
-    getTiles()
-    getReports()
-  }, []);
 
   const changeLayout = (layout) => {
     const wide = layout !== 'grid'
@@ -244,11 +249,16 @@ function TopSection() {
 
   // Handes the new report creation and shows it as a modal.
   const handleCreateDashboard = async () => {
-    console.log(folderNumber)
     await createNewDashboard(columns, Array.from(filterSet), folderNumber, dashboardName, setNewDashboardId)
     setShowModal(true); 
   }
 
+  // This useEffect will run once when the component is mounted
+  // It will fetch the tiles and reports from the Looker API 
+  useEffect(() => {
+    getTiles()
+    getReports()
+  }, []);
 
   if (tiles.length === 0) {
     return <div>Loading tiles...</div>;
@@ -305,7 +315,6 @@ function TopSection() {
                     <Form.Select 
                       aria-label="Start with existing report" 
                       value={selectedReport || "Select an existing report to modify"} onChange={handleReportChange}>
-                      {console.log(reports)}
                       <option>Select an existing report to work from</option>
                       {reports.map((report, index) => (
                         <option key={index} value={report.title}>{report.title}</option>

@@ -218,6 +218,82 @@ router.get("/dashboard/:id", async (req, res, next) => {
     .catch((e) => res.send({ error: e.message }));
 });
 
+router.get('/dashboard-filters/:id', async (req, res) => {
+  try {
+    // Extract the dashboard ID from the request parameters
+    const dashboardId = parseInt(req.params.id, 10);
+
+    // Call the SDK function with the dashboard ID
+    const response = await sdk.ok(sdk.dashboard(dashboardId, 'dashboard_filters'));
+
+    // Send the response back to the client
+    res.json(response);
+  } catch (error) {
+    // Handle any errors
+    console.error('Error fetching LookML dashboard:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+// This fetches tiles from a static folder name. 
+router.get('/fetch-tiles', async (req, res) => {
+  try {
+    // Call the SDK function with the folder name
+    let response = await sdk.ok(sdk.search_folders(
+      {
+        fields: 'dashboards, id',
+        name: 'Tiles'
+      }))
+    // Send the response back to the client
+    res.json(response);
+  } catch (error) {
+    // Handle any errors
+    console.error('Error fetching tiles:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+
+// This fetches existing reports from a static folder name. In production, this will be customer-specific.
+// Instead of being based on the folder name, perhaps it will be based on customer data stored elsewhere
+router.get('/fetch-customer-reports', async (req, res) => {
+  try {
+    // Call the SDK function with the folder name
+    let response = await sdk.ok(sdk.search_folders(
+      {
+        fields: 'dashboards, id',
+        name: 'Client Dashboards'
+      }))
+    // Send the response back to the client
+    res.json(response);
+  } catch (error) {
+    // Handle any errors
+    console.error('Error fetching client dashboards:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+// This fetches existing reports from a static folder name.
+// It will be a folder all customers have access to, 
+// and will be used to populate the list of initial reports
+router.get('/fetch-shared-reports', async (req, res) => {
+  try {
+    // Call the SDK function with the folder name
+    let response = await sdk.ok(sdk.search_folders(
+      {
+        fields: 'dashboards, id',
+        name: 'Shared Reports'
+      }))
+    // Send the response back to the client
+    res.json(response);
+  } catch (error) {
+    // Handle any errors
+    console.error('Error fetching shared reports:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+// This fetches lookml for a user defined dashboard
 router.get('/dashboard-lookml/:id', async (req, res) => {
   try {
     // Extract the dashboard ID from the request parameters
@@ -235,7 +311,31 @@ router.get('/dashboard-lookml/:id', async (req, res) => {
   }
 });
 
+// This fetches a thumbnail image for a user defined dashboard
+router.get('/dashboard-thumbnail/:id', async (req, res) => {
+  try {
+    // Extract the dashboard ID from the request parameters
+    const dashboardId = parseInt(req.params.id, 10);
 
+    // Call the SDK function with the dashboard ID
+    const responseTest = await sdk.ok(sdk.content_thumbnail({
+      type:"dashboard",
+      resource_id: req.params.id
+    }));
+
+    // Set the Content-Type header to image/svg+xml
+    res.setHeader('Content-Type', 'image/svg+xml');
+
+    // Send the SVG image data as the response
+    res.send(responseTest);
+  } catch (error) {
+    // Handle any errors
+    console.error('Error fetching LookML dashboard image:', error);
+    res.status(500).send('Internal Server Error');
+  }
+});
+
+// This creates a new dashboard from LookML
 router.post('/import-dashboard', async (req, res) => {
   try {
     // Extract folder_id and lookml (newYaml) from the request body
@@ -256,7 +356,7 @@ router.post('/import-dashboard', async (req, res) => {
     res.json(response);
   } catch (error) {
     // Handle any errors
-    console.error('Error importing dashboard from LookML:', error);
+    console.error('Error creating dashboard from LookML:', error);
     res.status(500).send('Internal Server Error');
   }
 });

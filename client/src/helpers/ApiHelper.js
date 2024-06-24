@@ -1,7 +1,7 @@
 const handleResponse = async (response) => {
   const isJson = response.headers?.get("content-type")?.includes("application/json");
 
-  const data = isJson ? await response.json() : null;
+  const data = isJson ? await response.json() : response.text();
 
   // Check if error response
   if (!response.ok) {
